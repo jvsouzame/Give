@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pesquisa por Bairro</title>
+    <title>Give</title>
     <style>
         body {
             font-family: 'Lato', sans-serif;
@@ -11,28 +11,37 @@
             color: #333;
             overflow: hidden;
         }
-        h1 {
-            display: none; /* Ocultar o cabeçalho */
-        }
-        #search {
+        #initialScreen, #mapScreen {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s;
+        }
+        #initialScreen {
+            background-color: #f4f4f4;
+        }
+        #mapScreen {
+            display: none;
+            justify-content: flex-start;
+        }
+        #searchInitial, #searchMap {
             display: flex;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             overflow: hidden;
         }
-        #search input[type="text"] {
+        #searchInitial input[type="text"], #searchMap input[type="text"] {
             width: 300px;
             padding: 10px;
             border: none;
             outline: none;
         }
-        #search button {
+        #searchInitial button, #searchMap button {
             padding: 10px 20px;
             background-color: #6A24FF;
             color: white;
@@ -40,16 +49,22 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        #search button:hover {
+        #searchInitial button:hover, #searchMap button:hover {
             background-color: #5a1fcc;
         }
-        #search button i {
+        #searchInitial button i, #searchMap button i {
             font-size: 16px;
+        }
+        #searchMap {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
         }
         #map {
             height: 100vh;
             width: 100vw;
-            transition: width 0.3s;
         }
         #sidebar {
             height: 100vh;
@@ -107,27 +122,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="search">
-        <input type="text" id="bairro" placeholder="Digite o bairro" oninput="buscarSugestoes(this.value)">
-        <button onclick="pesquisarBairro()">
-            <i class="bi bi-search"></i>
-        </button>
-    </div>
-    <div id="map"></div>
-    <div id="sidebar">
-        <button id="closeSidebar" onclick="closeSidebar()">&times;</button>
-        <img id="sidebarImage" src="" alt="Imagem da Loja">
-        <h3 id="sidebarTitle"></h3>
-        <div class="icon-text" id="sidebarAddress">
-            <i class="bi bi-geo-alt"></i>
-            <span></span>
-        </div>
-        <div class="icon-text" id="sidebarPhone">
-            <i class="bi bi-telephone"></i>
-            <span></span>
+    <div id="initialScreen">
+        <div id="searchInitial">
+            <input type="text" id="bairroInitial" placeholder="Pesquisar pontos de coleta">
+            <button onclick="pesquisarBairro(true)">
+                <i class="bi bi-search"></i>
+            </button>
         </div>
     </div>
-
+    <div id="mapScreen">
+        <div id="map"></div>
+        <div id="searchMap">
+            <input type="text" id="bairroMap" placeholder="Pesquisar pontos de coleta">
+            <button onclick="pesquisarBairro(false)">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+        <div id="sidebar">
+            <button id="closeSidebar" onclick="closeSidebar()">&times;</button>
+            <img id="sidebarImage" src="" alt="Imagem da Loja">
+            <h3 id="sidebarTitle"></h3>
+            <div class="icon-text" id="sidebarAddress">
+                <i class="bi bi-geo-alt"></i>
+                <span></span>
+            </div>
+            <div class="icon-text" id="sidebarPhone">
+                <i class="bi bi-telephone"></i>
+                <span></span>
+            </div>
+        </div>
+    </div>
     <!-- Incluindo API do Google Maps -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBS7jwvPCjm2mLrLo1Zgq7z297pFoURXN4&callback=initMap"></script>
     <script>
@@ -155,7 +179,6 @@
                 localizacao: { lat: -27.591177, lng: -48.558572 },
                 imagem: "https://via.placeholder.com/400"
             }
-            
         ];
 
         function initMap() {
@@ -184,21 +207,23 @@
                     document.getElementById('sidebarPhone').querySelector('span').innerText = loja.telefone;
                     document.getElementById('sidebarImage').src = loja.imagem;
                     document.getElementById('sidebar').style.display = 'block';
-                    document.getElementById('map').style.width = '80vw'; // Ajusta a largura do mapa
                 });
             });
         }
 
         function closeSidebar() {
             document.getElementById('sidebar').style.display = 'none';
-            document.getElementById('map').style.width = '100vw'; // Redefine a largura do mapa
         }
 
-        function pesquisarBairro() {
-            const bairro = document.getElementById("bairro").value;
+        function pesquisarBairro(isInitialScreen) {
+            const bairro = isInitialScreen ? document.getElementById("bairroInitial").value : document.getElementById("bairroMap").value;
 
             geocoder.geocode({ 'address': bairro }, function(results, status) {
                 if (status === 'OK') {
+                    if (isInitialScreen) {
+                        document.getElementById('initialScreen').style.display = 'none';
+                        document.getElementById('mapScreen').style.display = 'flex';
+                    }
                     map.setCenter(results[0].geometry.location);
                     map.setZoom(15);
 

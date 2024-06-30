@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pesquisa por Bairro</title>
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            overflow: hidden;
+        }
+        h1 {
+            display: none; /* Ocultar o cabeçalho */
+        }
+        #search {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #search input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+        #search button {
+            padding: 10px 20px;
+            background-color: #6A24FF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #search button:hover {
+            background-color: #5a1fcc;
+        }
+        #search button i {
+            font-size: 16px;
+        }
+        #map {
+            height: 100vh;
+            width: 100vw;
+            transition: width 0.3s;
+        }
+        #sidebar {
+            height: 100vh;
+            width: 20vw;
+            position: absolute;
+            right: 0;
+            top: 0;
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            padding: 20px;
+            display: none; /* Oculto por padrão */
+            font-family: 'Lato', sans-serif; /* Definir fonte para Lato */
+        }
+        #sidebar img {
+            width: 100%; /* Largura total */
+            margin-top: 40px; /* Margem para espaçamento entre o botão de fechar e a imagem */
+            border-radius: 8%;
+        }
+        #sidebar h3 {
+            margin-top: 16px; /* Espaçamento entre a imagem e o texto abaixo */
+            color: #212121; /* Cor do título */
+            font-size: 24px; /* Tamanho do título da loja */
+        }
+        #sidebar .icon-text {
+            display: flex;
+            align-items: flex-start; /* Alinhar ao topo */
+            color: #7B7B7B; /* Cor dos subtítulos */
+            margin-top: 8px; /* Espaçamento superior */
+        }
+        #sidebar .icon-text i {
+            margin-right: 8px; /* Espaçamento entre o ícone e o texto */
+            margin-top: 2px; /* Ajuste fino para o alinhamento vertical */
+        }
+        #closeSidebar {
+            position: absolute;
+            top: 0px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            color: #212121; /* Cor padrão */
+            transition: color 0.3s; /* Transição suave para o efeito de hover */
+        }
+        #closeSidebar:hover {
+            color: #6A24FF; /* Cor ao passar o mouse */
+        }
+    </style>
+    <!-- Bootstrap CSS para estilização -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <!-- Ícones do Bootstrap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
+    <!-- Fonte Lato do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="search">
+        <input type="text" id="bairro" placeholder="Digite o bairro" oninput="buscarSugestoes(this.value)">
+        <button onclick="pesquisarBairro()">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+    <div id="map"></div>
+    <div id="sidebar">
+        <button id="closeSidebar" onclick="closeSidebar()">&times;</button>
+        <img id="sidebarImage" src="" alt="Imagem da Loja">
+        <h3 id="sidebarTitle"></h3>
+        <div class="icon-text" id="sidebarAddress">
+            <i class="bi bi-geo-alt"></i>
+            <span></span>
+        </div>
+        <div class="icon-text" id="sidebarPhone">
+            <i class="bi bi-telephone"></i>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Incluindo API do Google Maps -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBS7jwvPCjm2mLrLo1Zgq7z297pFoURXN4&callback=initMap"></script>
+    <script>
+        let map;
+        let geocoder;
+        let lojas = [
+            {
+                nome: "Loja A",
+                endereco: "Rua do Estreito, Florianópolis, SC",
+                telefone: "(48) 1111-1111",
+                localizacao: { lat: -27.597577, lng: -48.553072 },
+                imagem: "https://via.placeholder.com/400"
+            },
+            {
+                nome: "Loja B",
+                endereco: "Avenida do Estreito, Florianópolis, SC",
+                telefone: "(48) 2222-2222",
+                localizacao: { lat: -27.594377, lng: -48.550872 },
+                imagem: "https://via.placeholder.com/400"
+            },
+            {
+                nome: "Loja C",
+                endereco: "Travessa do Estreito, Florianópolis, SC",
+                telefone: "(48) 3333-3333",
+                localizacao: { lat: -27.591177, lng: -48.558572 },
+                imagem: "https://via.placeholder.com/400"
+            }
+            
+        ];
+
+        function initMap() {
+            // Inicializa o mapa centrado em uma localização padrão (Florianópolis)
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: -27.597577, lng: -48.553072 },
+                zoom: 14
+            });
+
+            geocoder = new google.maps.Geocoder();
+            adicionarLojas();
+        }
+
+        function adicionarLojas() {
+            lojas.forEach(loja => {
+                const marker = new google.maps.Marker({
+                    position: loja.localizacao,
+                    map: map,
+                    title: loja.nome,
+                    icon: 'https://maps.google.com/mapfiles/kml/paddle/purple-stars.png' // Ícone roxo para lojas
+                });
+
+                marker.addListener('click', () => {
+                    document.getElementById('sidebarTitle').innerText = loja.nome;
+                    document.getElementById('sidebarAddress').querySelector('span').innerText = loja.endereco;
+                    document.getElementById('sidebarPhone').querySelector('span').innerText = loja.telefone;
+                    document.getElementById('sidebarImage').src = loja.imagem;
+                    document.getElementById('sidebar').style.display = 'block';
+                    document.getElementById('map').style.width = '80vw'; // Ajusta a largura do mapa
+                });
+            });
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('map').style.width = '100vw'; // Redefine a largura do mapa
+        }
+
+        function pesquisarBairro() {
+            const bairro = document.getElementById("bairro").value;
+
+            geocoder.geocode({ 'address': bairro }, function(results, status) {
+                if (status === 'OK') {
+                    map.setCenter(results[0].geometry.location);
+                    map.setZoom(15);
+
+                    new google.maps.Marker({
+                        map: map,
+                        position: results[0].geometry.location
+                    });
+                } else {
+                    alert('Geocode não foi bem sucedido: ' + status);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

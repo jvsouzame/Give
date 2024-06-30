@@ -124,7 +124,7 @@
 <body>
     <div id="initialScreen">
         <div id="searchInitial">
-            <input type="text" id="bairroInitial" placeholder="Pesquisar pontos de coleta">
+            <input type="text" id="bairroInitial" placeholder="Pesquisar pontos de coleta" onkeydown="handleKeyDown(event, true)">
             <button onclick="pesquisarBairro(true)">
                 <i class="bi bi-search"></i>
             </button>
@@ -133,7 +133,7 @@
     <div id="mapScreen">
         <div id="map"></div>
         <div id="searchMap">
-            <input type="text" id="bairroMap" placeholder="Pesquisar pontos de coleta">
+            <input type="text" id="bairroMap" placeholder="Pesquisar pontos de coleta" onkeydown="handleKeyDown(event, false)">
             <button onclick="pesquisarBairro(false)">
                 <i class="bi bi-search"></i>
             </button>
@@ -235,6 +235,12 @@
                     alert('Geocode não foi bem sucedido: ' + status);
                 }
             });
+        }
+
+        function handleKeyDown(event, isInitialScreen) {
+            if (event.key === 'Enter') {
+                pesquisarBairro(isInitialScreen);
+            }
         }
     </script>
 </body>
